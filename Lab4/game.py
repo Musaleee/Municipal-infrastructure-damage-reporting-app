@@ -16,8 +16,10 @@ class Checkers:
     def print_board(self):
         print("\n   " + " ".join(str(c) for c in range(SIZE)))
         print("   " + "-" * (SIZE * 2 - 1))
+
         for r, row in enumerate(self.board):
             display_row = []
+
             for piece in row:
                 if piece == "RK":
                     display_row.append("r")
@@ -25,7 +27,9 @@ class Checkers:
                     display_row.append("b")
                 else:
                     display_row.append(piece)
+
             print(f"{r}  " + " ".join(display_row))
+
         print("Legend: R/B = normal pieces, r/b = kings")
 
     def set_test_position(self, board, player):
@@ -41,7 +45,7 @@ class Checkers:
         )
 
     def check_game_over(self):
-        """Check whether the current player has lost at the start of a turn."""
+        """Check whether the current player has lost."""
         if not self.player_has_piece():
             winner = "B" if self.player == "R" else "R"
             print(f"{winner} wins! {self.player} has no pieces.")
@@ -55,7 +59,6 @@ class Checkers:
         return False
 
     def get_move(self):
-        """Read and validate the basic input format."""
         raw = input(f"{self.player}> ").strip().lower().split()
 
         if raw == ["q"]:
@@ -78,9 +81,18 @@ class Checkers:
         return (sr, sc), (er, ec)
 
     def make_move(self, start, end):
-        """Apply a validated capture or simple move."""
+        """
+        Apply a validated move.
+
+        Returns:
+            ("simple", promoted)
+            ("capture", promoted)
+            (None, False) for an invalid move.
+        """
         sr, sc = start
         er, ec = end
+
+        piece_before = self.board[sr][sc]
 
         if capture_move(self.board, self.player, start, end):
             mr, mc = (sr + er) // 2, (sc + ec) // 2
@@ -88,26 +100,58 @@ class Checkers:
             move_piece(self.board, start, end)
             self.board[mr][mc] = "."
 
-            was_promoted = promote(self.board)
+            was_promoted = promote(self.board, end)
 
-            return "capture", was_promoted
+            return "capture", was_promoted, piece_before
 
         if simple_move(self.board, self.player, start, end):
             move_piece(self.board, start, end)
 
-            was_promoted = promote(self.board)
+            was_promoted = promote(self.board, end)
 
-            return "simple", was_promoted
+            return "simple", was_promoted, piece_before
 
-        return None, False
+        return None, False, piece_before
+
+    def print_move_result(
+        self,
+        move_type,
+        start,
+        end,
+        was_promoted,
+    ):
+        if move_type == "capture":
+            if was_promoted:
+                print(
+                    f"{self.player} captured at "
+                    f"({end[0]},{end[1]}) and promoted to king at "
+                    f"({end[0]},{end[1]})"
+                )
+            else:
+                print(
+                    f"{self.player} captured at "
+                    f"({end[0]},{end[1]})"
+                )
+        else:
+            if was_promoted:
+                print(
+                    f"{self.player} promoted to king at "
+                    f"({end[0]},{end[1]})"
+                )
+            else:
+                print(
+                    f"{self.player} moved "
+                    f"({start[0]},{start[1]})->"
+                    f"({end[0]},{end[1]})"
+                )
 
     def run(self):
         print("Checkers — move: sr sc er ec")
 
         while True:
-            # Check game-over conditions at the start of every turn.
             self.print_board()
 
+            # Check game-over conditions at the start of every turn.
             if self.check_game_over():
                 return
 
@@ -132,7 +176,7 @@ class Checkers:
                 start, end = result
                 sr, sc = start
 
-                # During a multi-capture, only the same piece can move.
+                # During a multi-capture, only the same piece may move.
                 if forced_piece is not None and start != forced_piece:
                     print("You must continue capturing with the same piece.")
                     continue
@@ -144,7 +188,7 @@ class Checkers:
                     print("That is not your piece.")
                     continue
 
-                move_type, was_promoted = self.make_move(start, end)
+                move_type, was_promoted, _ = self.make_move(start, end)
 
                 if move_type is None:
                     if forced_piece is None and forced_capture:
@@ -155,16 +199,23 @@ class Checkers:
                         print("Invalid move.")
                     continue
 
-                # A simple move always ends the turn.
+                # Exactly one player-facing result line per accepted move.
+                self.print_move_result(
+                    move_type,
+                    start,
+                    end,
+                    was_promoted,
+                )
+
+                # A simple move ends the turn.
                 if move_type == "simple":
                     break
 
-                # Capture happened.
-                # Promotion during a capture immediately ends the turn.
+                # Promotion during a capture ends the turn.
                 if was_promoted:
                     break
 
-                # Check whether this exact piece can capture again.
+                # Check whether the same piece can capture again.
                 new_position = end
 
                 if has_capture(
@@ -176,7 +227,7 @@ class Checkers:
                     self.print_board()
                     continue
 
-                # No more captures for this piece.
+                # No further capture.
                 break
 
             self.player = "B" if self.player == "R" else "R"

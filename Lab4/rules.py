@@ -29,11 +29,11 @@ def simple_move(board, player, start, end):
     if piece_color(piece) != player:
         return False
 
-    # Kings can move in either direction.
+    # Kings can move diagonally in either direction.
     if is_king(piece):
         return True
 
-    # Normal pieces only move forward.
+    # Normal pieces can only move forward.
     direction = -1 if player == "R" else 1
     return er - sr == direction
 
@@ -53,6 +53,7 @@ def capture_move(board, player, start, end):
     if piece_color(piece) != player:
         return False
 
+    # Normal pieces can only capture forward.
     # Kings can capture in either direction.
     if not is_king(piece):
         direction = -1 if player == "R" else 1
@@ -61,16 +62,17 @@ def capture_move(board, player, start, end):
 
     mr, mc = (sr + er) // 2, (sc + ec) // 2
 
-    # Compare colour, not the exact string, so RK cannot capture R
-    # and BK cannot capture B.
+    # Compare colours, not exact strings.
+    # RK cannot capture R, and BK cannot capture B.
     return piece_color(board[mr][mc]) not in (None, player)
 
 
 def has_capture(board, player, only_from=None):
     """
-    Return True if the player has at least one capture.
+    Return True if the player has at least one legal capture.
 
-    If only_from is supplied, only that particular piece is checked.
+    If only_from is supplied, only that piece is checked.
+    This function never prints anything.
     """
     if only_from is not None:
         positions = [only_from]
@@ -100,7 +102,14 @@ def has_capture(board, player, only_from=None):
 
 
 def has_legal_move(board, player):
-    """Return True if the player has at least one legal simple or capture move."""
+    """
+    Return True if the player has at least one legal move.
+
+    Forced-capture rules are respected: if any capture exists,
+    a simple move does not count as legal.
+    """
+    forced_capture = has_capture(board, player)
+
     for sr in range(SIZE):
         for sc in range(SIZE):
             if piece_color(board[sr][sc]) != player:
@@ -114,17 +123,36 @@ def has_legal_move(board, player):
                     if capture_move(board, player, start, end):
                         return True
 
-                    # A simple move is legal only when there is
-                    # no capture anywhere for this player.
-                    if simple_move(board, player, start, end):
-                        if not has_capture(board, player):
-                            return True
+                    if not forced_capture and simple_move(
+                        board, player, start, end
+                    ):
+                        return True
 
     return False
 
 
-def promote(board):
-    """Promote pieces and return True if a promotion occurred."""
+def promote(board, position=None):
+    """
+    Promote a piece on the correct back row.
+
+    If position is supplied, only that piece is considered.
+    Returns True if a promotion occurred.
+    """
+    if position is not None:
+        r, c = position
+        piece = board[r][c]
+
+        if piece == "R" and r == 0:
+            board[r][c] = "RK"
+            return True
+
+        if piece == "B" and r == SIZE - 1:
+            board[r][c] = "BK"
+            return True
+
+        return False
+
+    # Kept as a general-purpose version for compatibility.
     promoted = False
 
     for c in range(SIZE):
