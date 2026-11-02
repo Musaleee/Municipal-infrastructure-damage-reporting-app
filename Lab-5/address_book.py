@@ -32,7 +32,7 @@ def contact_id(full_name):
 
 def search_contacts(text):
     """Return names whose name or phone number contains the text."""
-    found=[]
+    found = []
     for name, info in contacts.items():
         if text.lower() in name.lower() or text in info["phone"]:
             found.append(name)
@@ -55,7 +55,6 @@ def contacts_by_city():
     for name, info in contacts.items():
         grouped.setdefault(info["city"], []).append(name)
     return grouped
-
 
 
 def print_directory():
@@ -99,8 +98,11 @@ def main():
     export_csv()
     backup_book()
     restored = restore_book()
-    print("Contacts restored:", len(restored), "| first:",sorted(restored)[0])
-    print("Restored contacts match the in-memory address book:", restored == contacts)
+    print("Contacts restored:", len(restored), "| first:", sorted(restored)[0])
+    print(
+        "Restored contacts match the in-memory address book:",
+        restored == contacts,
+    )
 
 
 if __name__ == "__main__":
