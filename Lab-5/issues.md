@@ -46,8 +46,8 @@ Line numbers refer to the original `address_book.py`. Baseline reports are in `r
 
 | Tool   | Before | After |
 |--------|--------|-------|
-| Pylint | 5.47/10 | _see after reports_ |
-| Bandit | 4 issues (1 High, 1 Medium, 2 Low) | _see after reports_ |
-| Flake8 | 4 issues | _see after reports_ |
+| Pylint | 5.47/10 | **10.00/10** |
+| Bandit | 4 issues (1 High, 1 Medium, 2 Low) | **No issues identified** |
+| Flake8 | 4 issues | **0 issues** (`reports/after/flake8_report.txt` is empty because Flake8 prints nothing when the code is clean) |
 
 The program prints the same output before and after the fixes. The demo still adds 3 valid contacts, rejects the invalid phone number, reports the missing contact, generates `ecc177` for Neha, and restores a backup that matches the in-memory book.
